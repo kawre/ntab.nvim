@@ -15,6 +15,7 @@ function tab.out(lines, pos, opts)
         ignore_beginning = false,
         behavior = config.user.behavior,
         skip_prev = false,
+        backwards = false,
     }, opts or {})
 
     log.debug(opts, "tabout opts")

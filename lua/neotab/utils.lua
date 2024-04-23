@@ -105,9 +105,10 @@ end
 ---@param info ntab.pair
 ---@param line string
 ---@param col integer
+---@param opts ntab.out.opts
 ---
 ---@return integer | nil
-function utils.find_next_nested(info, line, col) --
+function utils.find_next_nested(info, line, col, opts)
     local char = line:sub(col - 1, col - 1)
 
     if info.open == info.close or info.close == char then
@@ -143,7 +144,10 @@ end
 ---@param pair ntab.pair
 ---@param line string
 ---@param col integer
-function utils.find_next_closing(pair, line, col) --
+---@param opts ntab.out.opts
+---
+---@return integer|nil
+function utils.find_next_closing(pair, line, col, opts)
     local open_char = line:sub(col - 1, col - 1)
 
     local i
@@ -154,22 +158,22 @@ function utils.find_next_closing(pair, line, col) --
             or line:find(pair.close, col, true)
     end
 
-    return i or utils.find_next_nested(pair, line, col)
+    return i or utils.find_next_nested(pair, line, col, opts)
 end
 
 ---@param pair ntab.pair
 ---@param line string
 ---@param col integer
----@param behavior ntab.behavior
+---@param opts ntab.out.opts
 ---
 ---@return ntab.md | nil
-function utils.find_next(pair, line, col, behavior) --
+function utils.find_next(pair, line, col, opts)
     local i
 
-    if behavior == "closing" then
-        i = utils.find_next_closing(pair, line, col)
+    if opts.behavior == "closing" then
+        i = utils.find_next_closing(pair, line, col, opts)
     else
-        i = utils.find_next_nested(pair, line, col)
+        i = utils.find_next_nested(pair, line, col, opts)
     end
 
     if i then
