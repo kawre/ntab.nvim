@@ -5,6 +5,8 @@
 ---@class ntab.out.opts
 ---@field ignore_beginning? boolean
 ---@field behavior? ntab.behavior
+---@field skip_prev? boolean
+---@field backwards? boolean
 
 ---@alias ntab.behavior
 ---| "nested"

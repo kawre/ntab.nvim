@@ -56,13 +56,19 @@ function utils.find_opening(info, line, col)
     end
 end
 
-function utils.find_closing(info, line, col)
+---@param info ntab.pair
+---@param line string
+---@param col integer
+---@param direction? integer 1 | -1
+function utils.find_closing(info, line, col, direction)
+    direction = direction or 1
+
     if info.open == info.close then
         return line:find(info.close, col + 1, true)
     end
 
     local c = 1
-    for i = col + 1, #line do
+    for i = col + 1, #line, direction do
         local char = line:sub(i, i)
 
         if info.open == char then
@@ -109,10 +115,15 @@ end
 ---
 ---@return integer | nil
 function utils.find_next_nested(info, line, col, opts)
-    local char = line:sub(col - 1, col - 1)
+    local offset = opts.backwards and 0 or 1
+    local char = line:sub(col - offset, col - offset)
 
     if info.open == info.close or info.close == char then
-        for i = col, #line do
+        local start = opts.backwards and col - 1 or col
+        local stop = opts.backwards and 0 or #line
+        local step = opts.backwards and -1 or 1
+
+        for i = start, stop, step do
             char = line:sub(i, i)
             local char_info = utils.get_pair(char)
 
@@ -121,7 +132,7 @@ function utils.find_next_nested(info, line, col, opts)
             end
         end
     else
-        local closing_idx = utils.find_closing(info, line, col - 1)
+        local closing_idx = utils.find_closing(info, line, col - 1, offset)
         local l, r = col, (closing_idx or #line)
         local first
 
@@ -176,10 +187,14 @@ function utils.find_next(pair, line, col, opts)
         i = utils.find_next_nested(pair, line, col, opts)
     end
 
+    local offset = opts.backwards and 0 or 1
+
     if i then
+        i = i + (opts.backwards and 1 or 0)
+
         local prev = {
-            pos = col - 1,
-            char = line:sub(col - 1, col - 1),
+            pos = col - offset,
+            char = line:sub(col - offset, col - offset),
         }
 
         local next = {
@@ -190,7 +205,7 @@ function utils.find_next(pair, line, col, opts)
         return {
             prev = prev,
             next = next,
-            pos = math.max(col + 1, i),
+            pos = opts.backwards and math.min(col - 1, i) or math.max(col + 1, i),
         }
     end
 end

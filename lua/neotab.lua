@@ -14,14 +14,15 @@ function neotab.toggle()
     enabled = not enabled
 end
 
-function neotab.tabout()
+---@param opts? ntab.out.opts
+function neotab.tabout(opts)
     if not enabled or vim.tbl_contains(config.user.exclude, vim.bo.filetype) then
         return utils.tab()
     end
 
     local lines = api.nvim_buf_get_lines(0, 0, -1, false)
     local pos = api.nvim_win_get_cursor(0)
-    local md = tab.out(lines, pos)
+    local md = tab.out(lines, pos, opts)
     log.debug(md, "md")
 
     if md then
@@ -29,6 +30,10 @@ function neotab.tabout()
     else
         utils.tab()
     end
+end
+
+function neotab.tabout_back()
+    neotab.tabout({ backwards = true })
 end
 
 function neotab.tabout_luasnip()
@@ -63,11 +68,13 @@ function neotab.setup(options)
     config.setup(options)
 
     utils.map("i", "<Plug>(neotab-out)", '<Cmd>lua require("neotab").tabout()<CR>')
+    utils.map("i", "<Plug>(neotab-out-back)", '<Cmd>lua require("neotab").tabout_back()<CR>')
     utils.map("i", "<Plug>(neotab-out-luasnip)", '<Cmd>lua require("neotab").tabout_luasnip()<CR>')
 
     if config.user.tabkey ~= "" then
         api.nvim_set_keymap("i", config.user.tabkey, "<Plug>(neotab-out)", { silent = true })
     end
+    api.nvim_set_keymap("i", "<S-Tab>", "<Plug>(neotab-out-back)", { silent = true })
 
     if config.user.smart_punctuators.enabled then
         api.nvim_create_autocmd("InsertCharPre", {

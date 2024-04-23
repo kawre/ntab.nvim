@@ -32,28 +32,34 @@ function tab.out(lines, pos, opts)
 
     -- convert from 0 to 1 based indexing
     local col = pos[2] + 1
+    local offset = opts.backwards and 0 or 1
 
     if not opts.skip_prev then
-        local prev_pair = utils.get_pair(line:sub(col - 1, col - 1))
+        local prev_char = line:sub(col - offset, col - offset)
+        local prev_pair = utils.get_pair(prev_char)
+
         if prev_pair then
-            local md = utils.find_next(prev_pair, line, col, opts.behavior)
+            local md = utils.find_next(prev_pair, line, col, opts)
             if md then
                 return log.debug(md, "prev pair")
             end
         end
     end
 
-    local curr_pair = utils.get_pair(line:sub(col, col))
+    local curr_pos = opts.backwards and col - 1 or col
+    local curr_char = line:sub(curr_pos, curr_pos)
+    local curr_pair = utils.get_pair(curr_char)
+
     if curr_pair then
         local prev = {
-            pos = col,
-            char = line:sub(col, col),
+            pos = curr_pos,
+            char = curr_char,
         }
 
         local md = {
             prev = prev,
             next = prev,
-            pos = col + 1,
+            pos = curr_pos + offset,
         }
 
         return log.debug(md, "curr pair")
