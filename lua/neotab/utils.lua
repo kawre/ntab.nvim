@@ -59,22 +59,43 @@ end
 ---@param info ntab.pair
 ---@param line string
 ---@param col integer
----@param direction? integer 1 | -1
-function utils.find_closing(info, line, col, direction)
-    direction = direction or 1
-
+---@param backwards? boolean
+---
+---@return integer|nil
+function utils.find_closing(info, line, col, backwards)
     if info.open == info.close then
-        return line:find(info.close, col + 1, true)
+        if backwards then
+            for i = col - 1, 0, -1 do
+                if line:sub(i, i) == info.close then
+                    return i
+                end
+            end
+            return
+        else
+            return line:find(info.close, col + 1, true)
+        end
     end
 
+    local start = backwards and col - 1 or col + 1
+    local stop = backwards and 0 or #line
+    local step = backwards and -1 or 1
+
     local c = 1
-    for i = col + 1, #line, direction do
+    for i = start, stop, step do
         local char = line:sub(i, i)
 
-        if info.open == char then
-            c = c + 1
-        elseif info.close == char then
-            c = c - 1
+        if backwards then
+            if info.close == char then
+                c = c + 1
+            elseif info.open == char then
+                c = c - 1
+            end
+        else
+            if info.open == char then
+                c = c + 1
+            elseif info.close == char then
+                c = c - 1
+            end
         end
 
         if c == 0 then
@@ -83,7 +104,14 @@ function utils.find_closing(info, line, col, direction)
     end
 end
 
-function utils.valid_pair(info, line, l, r)
+function utils.valid_pair(info, line, l, r, backwards)
+    local start, stop, step
+    if backwards then
+        start, stop, step = r, l, -1
+    else
+        start, stop, step = l, r, 1
+    end
+
     if info.open == info.close and line:sub(l, r):find(info.open, 1, true) then
         return true
     end
@@ -132,17 +160,22 @@ function utils.find_next_nested(info, line, col, opts)
             end
         end
     else
-        local closing_idx = utils.find_closing(info, line, col - 1, offset)
-        local l, r = col, (closing_idx or #line)
-        local first
+        local closing_idx = utils.find_closing(info, line, col - 2, opts.backwards)
+        local first, start, stop, step
 
-        for i = l, r do
+        if opts.backwards then
+            start, stop, step = col - 1, closing_idx or 0, -1
+        else
+            start, stop, step = col, closing_idx or #line, 1
+        end
+
+        for i = start, stop, step do
             char = line:sub(i, i)
             local char_info = utils.get_pair(char)
 
             if char_info and char == char_info.open then
                 first = first or i
-                if utils.valid_pair(char_info, line, i + 1, r) then
+                if utils.valid_pair(char_info, line, i + 1, stop) then
                     return i
                 end
             end
